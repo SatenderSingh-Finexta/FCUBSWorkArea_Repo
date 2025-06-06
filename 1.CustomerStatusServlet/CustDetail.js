@@ -587,8 +587,6 @@ function getCustomerRecords(customerInformationArray, e, recflag, currpage) {
         customerInformationArray = fnUnEscape(customerInformationArray);
         var customerInformation = customerInformationArray.split("~");
         var customerNumber = customerInformation[0];
-		// 🔽 Call fnCheckCustomerStatus Servlet
-		fnCheckCustomerStatus(customerNumber);
         var localBranchCode = customerInformation[2];
         var custAccNo = "%";
     }
@@ -1250,6 +1248,7 @@ function fnCheckCustomerStatus(customerNumber) {
                 var match = responseText.match(/alert\(['"](.*?)['"]\)/);
                 if (match && match[1]) {
                     alert(match[1]);
+					console.log("Customer alert: " + match[1]);
                 }
             } catch (e) {
                 console.log("Error reading response: ", e);
@@ -1888,3 +1887,29 @@ function resizeImage(event) {
         }
     } catch (ex) {}
 }
+
+var lastCheckedCustomer = null;
+
+function startCustomerStatusWatcher() {
+    setInterval(function () {
+        try {
+            var selectedLinks = document.querySelectorAll("a.Astd");
+
+            selectedLinks.forEach(function (link) {
+                var custId = link.innerText.trim();
+
+                link.addEventListener("click", function () {
+                    if (custId && custId !== lastCheckedCustomer) {
+                        lastCheckedCustomer = custId;
+                        console.log("Auto-detected customer click: " + custId);
+                        fnCheckCustomerStatus(custId);
+                    }
+                }, { once: true });
+            });
+
+        } catch (e) {
+            console.error("Customer status watcher error:", e);
+        }
+    }, 1000); // check every second
+}
+window.addEventListener("load", startCustomerStatusWatcher);
